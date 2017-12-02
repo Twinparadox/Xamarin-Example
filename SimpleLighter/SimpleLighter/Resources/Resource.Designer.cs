@@ -45,16 +45,19 @@ namespace SimpleLighter
 		{
 			
 			// aapt resource value: 0x7f020000
-			public const int DisplayOFF = 2130837504;
+			public const int FlashLightOFF = 2130837504;
 			
 			// aapt resource value: 0x7f020001
-			public const int DisplayON = 2130837505;
+			public const int FlashLightON = 2130837505;
 			
 			// aapt resource value: 0x7f020002
-			public const int FlashLightOFF = 2130837506;
+			public const int GreenButton = 2130837506;
 			
 			// aapt resource value: 0x7f020003
-			public const int FlashLightON = 2130837507;
+			public const int Icon = 2130837507;
+			
+			// aapt resource value: 0x7f020004
+			public const int RedButton = 2130837508;
 			
 			static Drawable()
 			{
@@ -70,10 +73,7 @@ namespace SimpleLighter
 		{
 			
 			// aapt resource value: 0x7f050000
-			public const int btnDisplay = 2131034112;
-			
-			// aapt resource value: 0x7f050001
-			public const int btnFlash = 2131034113;
+			public const int layout = 2131034112;
 			
 			static Id()
 			{

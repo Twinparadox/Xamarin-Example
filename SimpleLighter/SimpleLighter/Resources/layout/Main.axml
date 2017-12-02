@@ -2,20 +2,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <ImageButton
+    android:layout_height="match_parent"
+    android:id="@+id/layout"
+    android:padding="0.0dp"
+    android:minWidth="25px"
+    android:minHeight="25px"
+    android:background="@android:color/black">
+<!--<ImageButton
         android:src="@drawable/displayoff"
         android:layout_width="match_parent"
         android:layout_height="267.5dp"
         android:id="@+id/btnDisplay"
         android:scaleType="fitCenter"
-        android:background="@android:color/white" />
-    <ImageButton
-        android:src="@drawable/flashlightoff"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/btnFlash"
-        android:layout_marginTop="0.0dp"
-        android:scaleType="fitCenter"
-        android:background="@android:color/white" />
+        android:background="@android:color/white" />-->
 </LinearLayout>
