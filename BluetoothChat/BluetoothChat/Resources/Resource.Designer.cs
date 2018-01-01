@@ -53,6 +53,12 @@ namespace BluetoothChat
 			// aapt resource value: 0x7f040000
 			public const int lvChatlog = 2130968576;
 			
+			// aapt resource value: 0x7f040003
+			public const int titleLeft = 2130968579;
+			
+			// aapt resource value: 0x7f040004
+			public const int titleRight = 2130968580;
+			
 			static Id()
 			{
 				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
@@ -68,6 +74,9 @@ namespace BluetoothChat
 			
 			// aapt resource value: 0x7f020000
 			public const int Main = 2130837504;
+			
+			// aapt resource value: 0x7f020001
+			public const int title = 2130837505;
 			
 			static Layout()
 			{

@@ -6,6 +6,7 @@ using Android.Views;
 using Java.Lang;
 using Android.Content;
 using Android.Views.InputMethods;
+using System;
 
 namespace BluetoothChat
 {
@@ -18,18 +19,18 @@ namespace BluetoothChat
         // Message types
         public enum EMessage
         {
-            M_STATE_CHANGE=1,
-            M_READ=2,
-            M_WRITE=3,
-            M_DEVICE_NAME=4,
-            M_TOAST=5
+            STATE_CHANGE=1,
+            READ=2,
+            WRITE=3,
+            DEVICE_NAME=4,
+            TOAST=5
         }
 
         // Request codes
         private enum ERequest
         {
-            R_CONNECT_DEVICE=1,
-            R_ENABLE_BT=2
+            CONNECT_DEVICE=1,
+            ENABLE_BT=2
         }
 
         // Key
@@ -49,7 +50,7 @@ namespace BluetoothChat
         protected ArrayAdapter<string> conversationArrayAdapter;
         private StringBuffer outStringBuffer;
         private BluetoothAdapter bluetoothAdapter = null;
-        private BluetoothCahtService chatService = null;
+        private BluetoothChatService chatService = null;
 
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -58,6 +59,10 @@ namespace BluetoothChat
             
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.Main);
+
+            title = FindViewById<TextView>(Resource.Id.titleLeft);
+            title.SetText(Resource.String.app_name);
+            title = FindViewById<TextView>(Resource.Id.titleRight);
 
             edittextMeesage = FindViewById<EditText>(Resource.Id.edittextMessage);
             lvChatlog = FindViewById<ListView>(Resource.Id.lvChatlog);
@@ -82,7 +87,7 @@ namespace BluetoothChat
             if(!bluetoothAdapter.IsEnabled)
             {
                 Intent enableIntent = new Intent(BluetoothAdapter.ActionRequestEnable);
-                StartActivityForResult(enableIntent, (int)ERequest.R_CONNECT_DEVICE);
+                StartActivityForResult(enableIntent, (int)ERequest.CONNECT_DEVICE);
             }
             else
             {
@@ -97,7 +102,7 @@ namespace BluetoothChat
 
             if(chatService!=null)
             {
-                if (chatService.GetState() == BluetoothChatService.STATE_NONE)
+                if (chatService.GetState() == BluetoothChatService.STATE.NONE)
                     chatService.Start();
             }
         }
@@ -111,19 +116,19 @@ namespace BluetoothChat
               {
                   if (e.ActionId == ImeAction.ImeNull && e.Event.Action == KeyEventActions.Up)
                   {
-                      var message = new String(((TextView)sender).Text);
+                      var message = new Java.Lang.String(((TextView)sender).Text);
                       SendMessage(message);
                   }
               };
 
             btnSend.Click += delegate (object sender, EventArgs e)
               {
-                  var message = String(lvChatlog.Text);
+                  var message = new Java.Lang.String(lvChatlog.Text);
                   SendMessage(message);
               };
 
             // Initialize the chatService to perform bluetooth connections
-            chatService = new BluetoothCahtService(this, new MyHandler(this));
+            chatService = new BluetoothChatService(this, new MyHandler(this));
 
             // Initialize the buffer for outgoing messages
             outStringBuffer = new StringBuffer("");
@@ -138,10 +143,10 @@ namespace BluetoothChat
                 chatService.Stop();
         }
         
-        private void SendMessage(String message)
+        private void SendMessage(Java.Lang.String message)
         {
             // check if connection is available
-            if(chatService.GetState()!=BluetoothChatService.STATE_CONNECTED)
+            if(chatService.GetState()!=BluetoothChatService.STATE.CONNECTED)
             {
                 Toast.MakeText(this, Resource.String.not_connected, ToastLength.Short).Show();
                 return;
@@ -171,7 +176,29 @@ namespace BluetoothChat
 
             public override void HandleMessage(Message msg)
             {
-                base.HandleMessage(msg);
+                switch (msg.What)
+                {
+                    case (int)EMessage.STATE_CHANGE:
+                        switch (msg.Arg1)
+                        {
+                            case (int)BluetoothChatService.EState.CONNECTED:
+                                bluetoothChat.title.SetText(Resource.String.titleConnected);
+                                bluetoothChat.title.Append(bluetoothChat.connectedDeviceName);
+                                bluetoothChat.conversationArrayAdapter.Clear();
+                                break;
+                            case (int)BluetoothChatService.EState.CONNECTING:
+                                break;
+                            case (int)BluetoothChatService.EState.LISTEN:
+                                break;
+                            case (int)BluetoothChatService.EState.NONE:
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
