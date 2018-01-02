@@ -74,13 +74,13 @@ namespace BluetoothChat
             }
 
             // cancel connected thread
-            if(connectedThread!=null)
+            if (connectedThread != null)
             {
                 connectedThread.Cancel();
                 connectedThread = null;
             }
 
-            if(acceptThread==null)
+            if (acceptThread == null)
             {
                 acceptThread = new AcceptThread(this);
                 acceptThread.Start();
@@ -93,16 +93,16 @@ namespace BluetoothChat
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Connect(BluetoothDevice device)
         {
-            if(state==(int)EState.CONNECTING)
+            if (state == (int)EState.CONNECTING)
             {
-                if(connectedThread!=null)
+                if (connectedThread != null)
                 {
                     connectThread.Cancel();
                     connectThread = null;
                 }
             }
 
-            if(connectedThread!=null)
+            if (connectedThread != null)
             {
                 connectedThread.Cancel();
                 connectedThread = null;
@@ -113,5 +113,80 @@ namespace BluetoothChat
 
             SetState((int)EState.CONNECTING);
         }
+
+        // manage bluetooth connection
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Connected(BluetoothSocket socket, BluetoothDevice device)
+        {
+            if (connectThread != null)
+            {
+                connectThread.Cancel();
+                connectThread = null;
+            }
+
+            if (connectedThread != null)
+            {
+                connectedThread.Cancel();
+                connectedThread = null;
+            }
+
+            if (acceptThread != null)
+            {
+                acceptThread.Cancel();
+                acceptThread = null;
+            }
+
+            connectedThread = new ConnectedThread(socket, this);
+            connectedThread.Start();
+
+            // send connected device to the UI Activity
+            var msg = handler.ObtainMessage((int)BluetoothChat.EMessage.DEVICE_NAME);
+            Bundle bundle = new Bundle();
+            bundle.PutString(BluetoothChat.DEVICE_NAME, device.Name);
+            msg.Data = bundle;
+
+            SetState((int)EState.CONNECTED);
+        }
+
+        // stop all threads
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Stop()
+        {
+            if(connectThread!=null)
+            {
+                connectThread.Cancel();
+                connectThread = null;
+            }
+
+            if(connectedThread!=null)
+            {
+                connectedThread.Cancel();
+                connectedThread = null;
+            }
+
+            if(acceptThread!=null)
+            {
+                acceptThread.Cancel();
+                acceptThread = null;
+            }
+
+            SetState((int)EState.NONE);
+        }
+
+        // write ConnectedThread using by unsychronized way
+        public void Write(byte[] outMsg)
+        {
+            connectedThread t;
+            lock(this)
+            {
+                if (state != (int)EState.CONNECTED)
+                    return;
+                t = connectedThread;
+            }
+
+            t.Write(outMsg);
+        }
+
+        // 
     }
 }
