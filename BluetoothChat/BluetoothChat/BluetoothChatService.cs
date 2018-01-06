@@ -176,7 +176,7 @@ namespace BluetoothChat
         // write ConnectedThread using by unsychronized way
         public void Write(byte[] outMsg)
         {
-            connectedThread t;
+            ConnectedThread t;
             lock(this)
             {
                 if (state != (int)EState.CONNECTED)
@@ -187,6 +187,32 @@ namespace BluetoothChat
             t.Write(outMsg);
         }
 
-        // 
+        // indicate the connnection failure and notify
+        private void ConnectedFailed()
+        {
+            SetState((int)EState.LISTEN);
+
+            // message
+            var msg = handler.ObtainMessage((int)BluetoothChat.EMessage.TOAST);
+            Bundle bundle = new Bundle();
+            bundle.PutString(BluetoothChat.TOAST, "디바이스 연결 실패");
+            msg.Data = bundle;
+            handler.SendMessage(msg);
+        }
+
+        // indicate the lost connection and notify
+        public void ConnectionLost()
+        {
+            SetState((int)EState.LISTEN);
+
+            // message
+            var msg = handler.ObtainMessage((int)BluetoothChat.EMessage.TOAST);
+            Bundle bundle = new Bundle();
+            bundle.PutString(BluetoothChat.TOAST, "디바이스 연결 끊김");
+            msg.Data = bundle;
+            handler.SendMessage(msg);
+        }
+
+
     }
 }
