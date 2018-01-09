@@ -213,6 +213,84 @@ namespace BluetoothChat
             handler.SendMessage(msg);
         }
 
+        // AcceptThread;runs while listening for incoming connections.
+        // convert to .NET thread
+        // server-side client behavior
+        private class AcceptThread : Thread
+        {
+            // local server socket
+            private BluetoothServerSocket mServerSocket;
+            private BluetoothChatService service;
 
+            public AcceptThread(BluetoothChatService service)
+            {
+                service = service;
+                BluetoothServerSocket tmp = null;
+                try
+                {
+                    // create new server socket
+                    tmp = service.adpater.ListenUsingRfcommWithServiceRecord(name, myUUID);
+                }
+                catch (Java.IO.IOExeption e)
+                {
+                }
+                mServerSocket = tmp;
+            }
+
+            public override void Run()
+            {
+                name = "AcceptThread";
+                BluetoothSocket socket = null;
+
+                while(service.state!=(int)BluetoothChatService.EState.CONNECTED)
+                {
+                    try
+                    {
+                        socket = mServerSocket.Accept();
+                    }
+                    catch (Java.IO.IOException e)
+                    {
+                        break;
+                    }
+
+                    if(socekt!=null)
+                    {
+                        lock(this)
+                        {
+                            switch (service.state)
+                            {
+                                case EState.LISTEN:
+                                case EState.CONNECTING:
+                                    service.Connected(socket, socket.RemoteDevice);
+                                    break;
+                                case EState.NONE:
+                                case EState.CONNECTED:
+                                    try
+                                    {
+                                        socket.Close();
+                                    }
+                                    catch (Java.IO.IOException e)
+                                    {
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            public void Cancel()
+            {
+                try
+                {
+                    mServerSocket.Close();
+                }
+                catch(Java.IO.IOException e)
+                {
+                }
+            }
+        }
     }
 }
