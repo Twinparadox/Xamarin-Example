@@ -292,5 +292,140 @@ namespace BluetoothChat
                 }
             }
         }
+
+        protected class ConnectThread : ThreadStaticAttribute
+        {
+            private BluetoothSocket mSocket;
+            private BluetoothDevice mDevice;
+            private BluetoothChatService service;
+
+            public ConnectThread(BluetoothDevice device, BluetoothChatService service)
+            {
+                mDevice = device;
+                service = service;
+                BluetoothSocket tmp = null;
+
+                try
+                {
+                    tmp = device.CreateRfcommSocketToServiceRecord(myUUID);
+                }
+                catch (Java.IO.IOException e)
+                {
+                }
+                mSocket = tmp;
+            }
+
+            public override void Run()
+            {
+                name = "ConnectThread";
+
+                // cancel discovery
+                service.adpater.CancelDiscovery();
+
+                // make a connection to BluetoothSocket
+                try
+                {
+                    mSocket.Connect();
+                }
+                catch(Java.IO.IOException e)
+                {
+                    service.ConnectedFailed();
+                    try
+                    {
+                        mSocket.Close();
+                    }
+                    catch(Java.IO.IOException e)
+                    { }
+
+                    service.Start();
+                    return;
+                }
+
+                // reset ConnectThread
+                lock(this)
+                {
+                    service.connectedThread = null;
+                }
+
+                service.Connected(mSocket, mDevice);
+            }
+
+            public void Cancle()
+            {
+                try
+                {
+                    mSocket.Close();
+                }
+                catch(Java.IO.IOException e)
+                { }
+            }
+        }
+
+        private class ConnectedThread : Thread
+        {
+            private BluetoothSocket mSocket;
+            private Stream mInStream;
+            private Stream mOutStream;
+            private BluetoothChatService service;
+
+            public ConnectedThread(BluetoothSocket socket, BluetoothChatService service)
+            {
+                mSocket = socket;
+                service = service;
+                Stream tmpIn = null, tmpOut = null;
+
+                try
+                {
+                    tmpIn = socket.InputStream;
+                    tmpOut = socket.OutputStream;
+                }
+                catch(Java.IO.IOException e)
+                { }
+
+                mInStream = tmpIn;
+                mOutStream = tmpOut;
+            }
+
+            public override void Run()
+            {
+                byte[] buffer = new byte[1024];
+                int bytes;
+
+                while(1)
+                {
+                    try
+                    {
+                        bytes = mInStream.Read(buffer, 0, buffer.Length);
+                        service.handler.ObtainMessage(BluetoothChat.EMessage.Read, bytes, -1, buffer).SendToTarget();
+                    }
+                    catch(Java.IO.IOException e)
+                    {
+                        service.ConnectionLost();
+                        break;
+                    }
+                }
+            }
+
+            public void Write(byte[] buffer)
+            {
+                try
+                {
+                    mOutStream.Write(buffer, 0, buffer.Length);
+                    service.handler.ObtainMessage(BluetoothChat.EMessage.Write, -1, -1, bffer).SendToTarget();
+                }
+                catch(Java.IO.IOException e)
+                { }
+            }
+
+            public void Cancel()
+            {
+                try
+                {
+                    mSocket.Close();
+                }
+                catch (Java.IO.IOException e)
+                { }
+            }
+        }
     }
 }

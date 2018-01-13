@@ -196,11 +196,78 @@ namespace BluetoothChat
                                 break;
                         }
                         break;
+                    case (int)EMessage.WRITE:
+                        byte[] writeBuf = (byte[])msg.Obj;
+                        // construct a string
+                        var writeMessage = new Java.Lang.String(writeBuf);
+                        bluetoothChat.conversationArrayAdapter.Add("ME: " + writeMessage);
+                        break;
+                    case (int)EMessage.READ:
+                        byte[] readBuf = (byte[])msg.Obj;
+                        // construct a string
+                        var readMessage = new Java.Lang.String(readBuf, 0, msg.Arg1);
+                        bluetoothChat.conversationArrayAdapter.Add(bluetoothChat.connectedDeviceName + ": ", readMessage);
+                        break;
+                    case (int)EMessage.DEVICE_NAME:
+                        // save connected device
+                        bluetoothChat.connectedDeviceName = msg.Data.GetString(DEVICE_NAME);
+                        Toast.MakeText(Application.Context, "Connected to " + bluetoothChat.connectedDeviceName, ToastLength.Short).Show();
+                        break;
+                    case (int)EMessage.TOAST:
+                        Toast.MakeText(ApplicationException.Context, msg.Data.GetString(TOAST), ToastLength.Short).Show();
+                        break;
                     default:
                         break;
                 }
             }
         }
+
+        protected override void OnActivityResult(int requestCode, Result resulteCode, Intent data)
+        {
+            switch (requestCode)
+            {
+                case (int)ERequest.CONNECT_DEVICE:
+                    if (resultCode == Result.Ok)
+                    {
+                        var address = data.Extras.GetString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                        BluetoothDevice device = bluetoothAdapter.GetRemoteDevice(address);
+                        chatService.Connect(device);
+                    }
+                    break;
+                case (int)ERequest.ENABLE_BT:
+                    if (resultCode == Result.Ok)
+                    {
+                        SetupChat();
+                    }
+                    else
+                    {
+                        Toast.MakeText(this, Resource.String.bt_not_enabled_leaving, ToastLength.Short).Show();
+                        Finish();
+                    }
+                    break;
+            }
+        }
+
+        public override bool OnCreateOptionsMenu(IMenu menu)
+        {
+            var inflater = MenuInflater;
+            inflater.Inflate(Resource.Menu.option_menu, menu);
+            return true;
+        }
+
+        public override bool OnOptionsItemSelected(IMenuItem item)
+        {
+            switch (item.ItemId)
+            {
+                case Resource.Id.scan:
+                    var serverIntent = new Intent(this, typeof(DeviceListActivity));
+                    StartActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                    return true;
+                case Resource.Id.discoverable:
+                    EnsureDiscoverable();
+                    return true;
+            }
+            return false;
+        }
     }
 }
-
