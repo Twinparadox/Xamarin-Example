@@ -11,7 +11,7 @@ using Android.Media;
 
 namespace SimpleLighter
 {
-    [Activity(Label = "SimpleLighter", MainLauncher = true, Icon = "@drawable/Icon", Theme = "@android:style/Theme.NoTitleBar")]
+    [Activity(Label = "SimpleLighter", MainLauncher = true, Icon = "@drawable/SimpleLighterIcon", Theme = "@android:style/Theme.NoTitleBar")]
     public class MainActivity : Activity
     {
         private bool isFlashOn = false;
@@ -36,14 +36,19 @@ namespace SimpleLighter
             hasFlash = ApplicationContext.PackageManager.HasSystemFeature(Android.Content.PM.PackageManager.FeatureCameraFlash);
 
             GetCamera();
+            Toast.MakeText(this, "플래시를 켜려면 짧게 터치해주세요.", ToastLength.Long).Show();
+            layout.LongClick += delegate
+            {
+                TurnOnFlash();
+            };
             layout.Click += delegate
-              {
-                  ChangeFlash();
-              };
+            {
+                TurnOffFlash();
+            };
         }
 
         // 플래시 버튼 클릭 이벤트
-        private void ChangeFlash()
+        private void TurnOnFlash()
         {
             if (!hasFlash)
             {
@@ -55,7 +60,23 @@ namespace SimpleLighter
             }
             else
             {
-                FlashLight();
+                FlashLight(true);
+            }
+        }
+
+        private void TurnOffFlash()
+        {
+            if (!hasFlash)
+            {
+                AlertDialog alert = new AlertDialog.Builder(this).Create();
+                alert.SetTitle("오류");
+                alert.SetMessage("기기에 카메라 플래시가 존재하지 않습니다.");
+                alert.Show();
+                return;
+            }
+            else
+            {
+                FlashLight(false);
             }
         }
 
@@ -77,11 +98,11 @@ namespace SimpleLighter
         }
 
         // 플래시
-        private void FlashLight()
+        private void FlashLight(bool flash)
         {
             if (camera == null || mParams == null)
                 return;
-            if (isFlashOn)
+            if (isFlashOn || flash)
             {
                 mParams = camera.GetParameters();
                 mParams.FlashMode = Parameters.FlashModeOff;
@@ -89,6 +110,7 @@ namespace SimpleLighter
                 camera.StartPreview();
                 isFlashOn = false;
                 ChangeBackground();
+                Toast.MakeText(this, "플래시를 켜려면 짧게 터치해주세요.", ToastLength.Long).Show();
             }
             else
             {
@@ -98,6 +120,7 @@ namespace SimpleLighter
                 camera.StartPreview();
                 isFlashOn = true;
                 ChangeBackground();
+                Toast.MakeText(this, "플래시를 끄려면 길게 터치해주세요.", ToastLength.Long).Show();
             }
         }
 
@@ -105,9 +128,14 @@ namespace SimpleLighter
         private void ChangeBackground()
         {
             if (isFlashOn)
+            {
                 layout.SetBackgroundColor(Android.Graphics.Color.White);
+            }
+
             else
+            {
                 layout.SetBackgroundColor(Android.Graphics.Color.Black);
+            }
         }
     }
 }
