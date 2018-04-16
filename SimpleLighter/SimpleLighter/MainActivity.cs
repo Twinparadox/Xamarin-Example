@@ -8,6 +8,12 @@ using Android.Hardware;
 using static Android.Hardware.Camera;
 using Android.Util;
 using Android.Media;
+using Android;
+using Android.Content.PM;
+using Android.Support.V4.Content;
+using Android.Support.V4.App;
+using Android.Support.Design.Widget;
+using System.Threading.Tasks;
 
 namespace SimpleLighter
 {
@@ -16,6 +22,7 @@ namespace SimpleLighter
     {
         private bool isFlashOn = false;
 
+        private bool hasCamera;
         private bool hasFlash;
 
         private Camera camera;
@@ -23,6 +30,18 @@ namespace SimpleLighter
         private MediaPlayer player;
 
         private LinearLayout layout;
+
+        readonly string[] permissions = 
+        {
+            Manifest.Permission.Camera
+        };
+        
+        private enum EPermission
+        {
+            PCAMERA
+        };
+
+        private Permission[] resultPermissions;
         
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -34,36 +53,39 @@ namespace SimpleLighter
             layout = FindViewById<LinearLayout>(Resource.Id.layout);
 
             hasFlash = ApplicationContext.PackageManager.HasSystemFeature(Android.Content.PM.PackageManager.FeatureCameraFlash);
-
-            GetCamera();
-            Toast.MakeText(this, "플래시를 켜려면 짧게 터치해주세요.", ToastLength.Long).Show();
-            layout.LongClick += delegate
+            
+            if (CheckSelfPermission(Manifest.Permission.Camera) == Permission.Denied && resultPermissions==null)
             {
-                TurnOnFlash();
-            };
-            layout.Click += delegate
+                GetCameraPermission();
+            }
+
+            Toast.MakeText(this, "플래시를 켜려면 짧게 터치해주세요.", ToastLength.Long).Show();
+            GetCamera();
+            layout.LongClick += delegate
             {
                 TurnOffFlash();
             };
+            layout.Click += delegate
+            {
+                TurnOnFlash();
+            };
         }
 
-        // 플래시 버튼 클릭 이벤트
-        private void TurnOnFlash()
+        private void GetCameraPermission()
         {
-            if (!hasFlash)
+            if ((int)Build.VERSION.SdkInt >= 23)
             {
-                AlertDialog alert = new AlertDialog.Builder(this).Create();
-                alert.SetTitle("오류");
-                alert.SetMessage("기기에 카메라 플래시가 존재하지 않습니다.");
-                alert.Show();
-                return;
+                Toast.MakeText(this, "SDK 23 이상", ToastLength.Long).Show();
+                RequestPermissions(permissions, (int)EPermission.PCAMERA);
+                OnRequestPermissionsResult((int)EPermission.PCAMERA, permissions, resultPermissions);
             }
             else
             {
-                FlashLight(true);
+                Toast.MakeText(this, "카메라 접근을 승인해주세요.", ToastLength.Long).Show();
             }
         }
 
+        // 플래시 버튼 클릭 이벤트
         private void TurnOffFlash()
         {
             if (!hasFlash)
@@ -76,6 +98,24 @@ namespace SimpleLighter
             }
             else
             {
+                Toast.MakeText(this, "플래시를 켜려면 짧게 터치해주세요.", ToastLength.Long).Show();
+                FlashLight(true);
+            }
+        }
+
+        private void TurnOnFlash()
+        {
+            if (!hasFlash)
+            {
+                AlertDialog alert = new AlertDialog.Builder(this).Create();
+                alert.SetTitle("오류");
+                alert.SetMessage("기기에 카메라 플래시가 존재하지 않습니다.");
+                alert.Show();
+                return;
+            }
+            else
+            {
+                Toast.MakeText(this, "플래시를 끄려면 길게 터치해주세요.", ToastLength.Long).Show();
                 FlashLight(false);
             }
         }
@@ -101,7 +141,9 @@ namespace SimpleLighter
         private void FlashLight(bool flash)
         {
             if (camera == null || mParams == null)
+            {
                 return;
+            }
             if (isFlashOn || flash)
             {
                 mParams = camera.GetParameters();
@@ -110,7 +152,6 @@ namespace SimpleLighter
                 camera.StartPreview();
                 isFlashOn = false;
                 ChangeBackground();
-                Toast.MakeText(this, "플래시를 켜려면 짧게 터치해주세요.", ToastLength.Long).Show();
             }
             else
             {
@@ -120,7 +161,6 @@ namespace SimpleLighter
                 camera.StartPreview();
                 isFlashOn = true;
                 ChangeBackground();
-                Toast.MakeText(this, "플래시를 끄려면 길게 터치해주세요.", ToastLength.Long).Show();
             }
         }
 
